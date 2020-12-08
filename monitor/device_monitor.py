@@ -107,8 +107,20 @@ class NVGPUMonitor(DeviceMonitor):
         return nvmlDeviceGetArchitecture(self.gpu_handle.contents)
 
     @omit_nvml_error(NVML_ERROR_FUNCTION_NOT_FOUND)
+    def driver_version(self):
+        return nvmlSystemGetDriverVersion().decode('utf-8')
+
+    @omit_nvml_error(NVML_ERROR_FUNCTION_NOT_FOUND)
+    def cuda_version(self):
+        return nvmlSystemGetCudaDriverVersion_v2()
+
+    @omit_nvml_error(NVML_ERROR_FUNCTION_NOT_FOUND)
     def usage(self):
         return nvml_struct_to_dict(nvmlDeviceGetUtilizationRates(self.gpu_handle))
+
+    @omit_nvml_error(NVML_ERROR_FUNCTION_NOT_FOUND)
+    def power_usage(self):
+        return nvmlDeviceGetPowerUsage(self.gpu_handle)
 
     @omit_nvml_error(NVML_ERROR_FUNCTION_NOT_FOUND)
     def temperature(self, fahrenheit=False):
@@ -123,6 +135,7 @@ class NVGPUMonitor(DeviceMonitor):
     def memory_info(self):
         return nvml_struct_to_dict(nvmlDeviceGetMemoryInfo(self.gpu_handle))
 
+    @omit_nvml_error(NVML_ERROR_FUNCTION_NOT_FOUND)
     def process_info(self):
         _procs = nvmlDeviceGetComputeRunningProcesses(self.gpu_handle)
         ret = {}
