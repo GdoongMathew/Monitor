@@ -1,8 +1,37 @@
 from abc import abstractmethod
 from monitor import *
 from pynvml import *
-import functools
+import platform
 import psutil
+
+
+def omit_nvml_error(nvml_error_code):
+    def wrapper(func):
+        def inner(self, *args, **kwargs):
+            try:
+                ret = func(self, *args, **kwargs)
+                return ret
+            except NVMLError(nvml_error_code):
+                return None
+
+        return inner
+    return wrapper
+
+
+def bytes_converter(_b, unit='mb'):
+    _unit_map = {
+        'b': pow(1024, 0),
+        'kb': pow(1024, 1),
+        'mb': pow(1024, 2),
+        'gb': pow(1024, 3),
+        'tb': pow(1024, 4)
+    }
+    assert unit in _unit_map, f'{unit} is not supported.'
+    return _b / _unit_map[unit]
+
+
+def nvml_struct_to_dict(_structure):
+    return {i: getattr(_structure, i) for i, _ in _structure._fields_}
 
 
 class DeviceMonitor:
@@ -15,9 +44,11 @@ class DeviceMonitor:
     def print(self):
         return NotImplementedError
 
+    @abstractmethod
     def temperature(self):
         return NotImplementedError
 
+    @abstractmethod
     def memory_info(self):
         return NotImplementedError
 
@@ -67,17 +98,43 @@ class NVGPUMonitor(DeviceMonitor):
     def print(self):
         pass
 
-    @property
+    @omit_nvml_error(NVML_ERROR_FUNCTION_NOT_FOUND)
+    def name(self):
+        return nvmlDeviceGetName(self.gpu_handle).decode('utf-8')
+
+    @omit_nvml_error(NVML_ERROR_FUNCTION_NOT_FOUND)
+    def architecture(self):
+        return nvmlDeviceGetArchitecture(self.gpu_handle.contents)
+
+    @omit_nvml_error(NVML_ERROR_FUNCTION_NOT_FOUND)
     def usage(self):
-        return nvmlDeviceGetPerformanceState(self.gpu_handle)
+        return nvml_struct_to_dict(nvmlDeviceGetUtilizationRates(self.gpu_handle))
 
-    @property
-    def temperature(self):
-        return nvmlDeviceGetTemperature(self.gpu_handle, 0)
+    @omit_nvml_error(NVML_ERROR_FUNCTION_NOT_FOUND)
+    def temperature(self, fahrenheit=False):
+        _temp = nvmlDeviceGetTemperature(self.gpu_handle, NVML_TEMPERATURE_GPU)
+        return (float(_temp) * 9 / 5) + 32 if fahrenheit else _temp
 
-    @property
+    @omit_nvml_error(NVML_ERROR_FUNCTION_NOT_FOUND)
+    def fans_speed(self):
+        return nvmlDeviceGetFanSpeed(self.gpu_handle)
+
+    @omit_nvml_error(NVML_ERROR_FUNCTION_NOT_FOUND)
     def memory_info(self):
-        return nvmlDeviceGetMemoryInfo(self.gpu_handle)
+        return nvml_struct_to_dict(nvmlDeviceGetMemoryInfo(self.gpu_handle))
+
+    def process_info(self):
+        _procs = nvmlDeviceGetComputeRunningProcesses(self.gpu_handle)
+        ret = {}
+        for _p in _procs:
+            try:
+                proc_name = str(nvmlSystemGetProcessName(_procs), encoding='big5').split('\\')[-1]
+            except NVMLError(NVML_ERROR_NO_PERMISSION):
+                proc_name = psutil.Process(pid=_p.pid).name()
+
+            ret[_p.pid] = {'name': proc_name,
+                           'used_memory': _p.usedGpuMemory}
+        return ret
 
 
 class CPUMonitor(DeviceMonitor):
@@ -90,12 +147,20 @@ class CPUMonitor(DeviceMonitor):
     def print(self):
         pass
 
-    def temperature(self):
+    def architecture(self):
+        return platform.machine()
+
+    def temperature(self, fahrenheit=False):
+        if psutil.LINUX or psutil.MACOS:
+            return psutil.sensors_temperatures(fahrenheit=fahrenheit)
+
         pass
 
     def memory_info(self):
-        p = psutil.Process(15)
-        p.memory_percent()
+        v_mem = psutil.virtual_memory()
+        return {'total': v_mem.total,
+                'free': v_mem.available,
+                'used': v_mem.total - v_mem.available}
 
 
 if __name__ == '__main__':
