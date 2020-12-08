@@ -1,8 +1,11 @@
-from abc import abstractmethod
-import psutil
+from .device_monitor import NVGPUMonitor
+from .device_monitor import CPUMonitor
 
 
 class Device:
+    device_id = None
+    device_name = ''
+
     temperature = None
     memory_total = None
     memory_used = None
@@ -10,19 +13,7 @@ class Device:
     memory_info = {}
     clock_speed = None
 
+    _device_handle = None
 
-class DeviceMonitor:
-    @abstractmethod
-    def summary(self):
-        # gathering information
-        return NotImplementedError
 
-    @abstractmethod
-    def print(self):
-        return NotImplementedError
 
-    def temperature(self):
-        return NotImplementedError
-
-    def total_mem_usage(self):
-        return NotImplementedError
