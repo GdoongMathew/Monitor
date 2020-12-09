@@ -2,7 +2,11 @@ from abc import abstractmethod
 from monitor import *
 from pynvml import *
 import platform
+import os
 import psutil
+
+if psutil.WINDOWS:
+    import wmi
 
 
 def omit_nvml_error(nvml_error_code):
@@ -56,6 +60,27 @@ class DeviceMonitor:
 class NVGPUMonitor(DeviceMonitor):
     nvmlInit()
 
+    _NVML_ARCH = {
+        NVML_DEVICE_ARCH_UNKNOWN: 'UNK',
+        NVML_DEVICE_ARCH_KEPLER: 'Kepler',
+        NVML_DEVICE_ARCH_MAXWELL: 'Maxwell',
+        NVML_DEVICE_ARCH_PASCAL: 'Pascal',
+        NVML_DEVICE_ARCH_VOLTA: 'Volta',
+        NVML_DEVICE_ARCH_TURING: 'Turing',
+        NVML_DEVICE_ARCH_AMPERE: 'Ampere',
+    }
+
+    _NVML_BRAND = {
+        NVML_BRAND_UNKNOWN: 'UNK',
+        NVML_BRAND_QUADRO: 'Quadro',
+        NVML_BRAND_TESLA: 'Tesla',
+        NVML_BRAND_NVS: 'Nvs',
+        NVML_BRAND_GRID: 'Grid',
+        NVML_BRAND_GEFORCE: 'GeForce',
+        NVML_BRAND_TITAN: 'Titan',
+        NVML_BRAND_COUNT: 'Count',
+    }
+
     def __init__(self, idx=None, uuid=None, pci_bus_id=None, serial=None):
         _kwargs = [idx, uuid, pci_bus_id, serial]
         assert _kwargs.count(None) >= 3, 'provide not more than one of idx, uuid, pci_bus_id or serial.'
@@ -103,6 +128,14 @@ class NVGPUMonitor(DeviceMonitor):
         return nvmlDeviceGetName(self.gpu_handle).decode('utf-8')
 
     @omit_nvml_error(NVML_ERROR_FUNCTION_NOT_FOUND)
+    def index(self):
+        return nvmlDeviceGetIndex(self.gpu_handle)
+
+    @omit_nvml_error(NVML_ERROR_FUNCTION_NOT_FOUND)
+    def uuid(self):
+        return nvmlDeviceGetUUID(self.gpu_handle)
+
+    @omit_nvml_error(NVML_ERROR_FUNCTION_NOT_FOUND)
     def architecture(self):
         return nvmlDeviceGetArchitecture(self.gpu_handle.contents)
 
@@ -113,6 +146,10 @@ class NVGPUMonitor(DeviceMonitor):
     @omit_nvml_error(NVML_ERROR_FUNCTION_NOT_FOUND)
     def cuda_version(self):
         return nvmlSystemGetCudaDriverVersion_v2()
+
+    @omit_nvml_error(NVML_ERROR_FUNCTION_NOT_FOUND)
+    def cuda_capacity(self):
+        return str(nvmlDeviceGetCudaComputeCapability(self.gpu_handle))
 
     @omit_nvml_error(NVML_ERROR_FUNCTION_NOT_FOUND)
     def usage(self):
@@ -160,14 +197,29 @@ class CPUMonitor(DeviceMonitor):
     def print(self):
         pass
 
+    def uuid(self):
+        if psutil.LINUX:
+            return os.popen("hdparm -I /dev/sda | grep 'Serial Number'").read().split()[-1]
+        elif psutil.WINDOWS:
+            return wmi.WMI().Win32_ComputerSystemProduct()[0].UUID
+        else:
+            return None
+
     def architecture(self):
         return platform.machine()
 
     def temperature(self, fahrenheit=False):
         if psutil.LINUX or psutil.MACOS:
-            return psutil.sensors_temperatures(fahrenheit=fahrenheit)
+            temp_readings = psutil.sensors_temperatures(fahrenheit=fahrenheit)['coretemp']
+            temp = []
+            for reading in temp_readings:
+                if 'Core' in reading.label:
+                    temp.append(reading.current)
 
-        pass
+            return sum(temp) / len(temp) if temp else None
+
+        else:
+            return None
 
     def memory_info(self):
         v_mem = psutil.virtual_memory()
