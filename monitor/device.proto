@@ -1,10 +1,11 @@
 syntax = "proto3";
 
+package device;
+
 message MemoryInfo {
   int64 total = 1;
   int64 free = 2;
   int64 used = 3;
-  int32 percentage = 4;
 }
 
 message Temperature {
@@ -14,27 +15,48 @@ message Temperature {
   }
 }
 
-message GPUBasicInfo {
+message Process {
+  int32 pid = 1;
+  string name = 2;
+  int64 memory = 3;
+  int32 usage = 4;
+}
+
+message BasicInfo {
   string name = 1;
   int32 index = 2;
   string serial = 3;
   string uuid = 4;
+  string architecture = 5;
+  string brand = 6;
 }
 
 message CommonMatrixInfo {
   Temperature temperature = 1;
   MemoryInfo memory_info = 2;
-  int32 usage = 3;
+
+  // percentage
+  float usage = 3;
+  float memory_usage = 4;
 }
 
 message NVGPU {
-  GPUBasicInfo info = 1;
+  BasicInfo info = 1;
   CommonMatrixInfo matrix = 2;
   int32 cuda_version = 3;
   string cuda_capacity = 4;
+  string driver_version = 5;
+
+  repeated Process process = 6;
+}
+
+message NVGPUArray {
+  repeated NVGPU nvg_pu = 1;
 }
 
 
 message CPU {
-
+  BasicInfo info = 1;
+  CommonMatrixInfo matrix = 2;
+  repeated Process process = 3;
 }
