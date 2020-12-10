@@ -3,6 +3,8 @@ from pynvml import *
 import platform
 import os
 import psutil
+import subprocess
+from .device_pb2 import *
 
 if psutil.WINDOWS:
     import wmi
@@ -92,7 +94,7 @@ class NVGPUMonitor(DeviceMonitor):
         NVML_BRAND_COUNT: 'Count',
     }
 
-    _summary_funcs = ['index', 'name', 'uuid', 'serial', 'architecture', 'driver_version',
+    _summary_funcs = ['index', 'name', 'uuid', 'serial', 'architecture', 'brand', 'driver_version',
                       'cuda_version', 'usage', 'power_usage', 'temperature', 'fan_speed',
                       'memory_info', 'process_info']
 
@@ -132,6 +134,56 @@ class NVGPUMonitor(DeviceMonitor):
 
         self.gpu_handle = _handle_func(_func_input)
 
+    def basic_proto(self):
+        basic_info = BasicInfo()
+
+        name = self.name()
+        index = self.index()
+        serial = self.serial()
+        uuid = self.uuid()
+        arch = self.architecture()
+        brand = self.brand()
+
+        basic_info.name = name if name is not None else ''
+        basic_info.index = index if index is not None else -1
+        basic_info.serial = serial if serial is not None else ''
+        basic_info.uuid = uuid if uuid is not None else ''
+        basic_info.architecture = arch if arch is not None else ''
+        basic_info.brand = brand if brand is not None else ''
+
+        return basic_info
+
+    def matrix_info_proto(self):
+        temp_proto = self.temperature()
+        mem_proto = self.memory_info()
+        usage = self.usage()
+        info_proto = CommonMatrixInfo()
+        info_proto.temperature.CopyFrom(temp_proto)
+        info_proto.memory_info.CopyFrom(mem_proto)
+        info_proto.usage = usage.gpu
+        info_proto.memory_usage = usage.memory
+        return info_proto
+
+    def gpu_proto(self):
+        nv_gpu = NVGPU()
+        info = self.basic_proto()
+        matrix = self.matrix_info_proto()
+        processes = self.process_info()
+        nv_gpu.info.CopyFrom(info)
+        nv_gpu.matrix.CopyFrom(matrix)
+        for p in processes.values():
+            _proc = nv_gpu.process.add()
+            _proc.CopyFrom(p)
+
+        cuda_ver = self.cuda_version()
+        cuda_cap = self.cuda_capacity()
+        driver_ver = self.driver_version()
+        nv_gpu.cuda_version = cuda_ver if cuda_ver is not None else -1
+        nv_gpu.cuda_capacity = cuda_cap if cuda_cap is not None else ''
+        nv_gpu.driver_version = driver_ver if driver_ver is not None else ''
+        return nv_gpu
+
+
     @omit_nvml_error([NVML_ERROR_FUNCTION_NOT_FOUND])
     def name(self):
         return nvmlDeviceGetName(self.gpu_handle).decode('utf-8')
@@ -170,7 +222,7 @@ class NVGPUMonitor(DeviceMonitor):
 
     @omit_nvml_error([NVML_ERROR_FUNCTION_NOT_FOUND])
     def usage(self):
-        return nvml_struct_to_dict(nvmlDeviceGetUtilizationRates(self.gpu_handle))
+        return nvmlDeviceGetUtilizationRates(self.gpu_handle)
 
     @omit_nvml_error([NVML_ERROR_FUNCTION_NOT_FOUND])
     def power_usage(self):
@@ -178,8 +230,13 @@ class NVGPUMonitor(DeviceMonitor):
 
     @omit_nvml_error([NVML_ERROR_FUNCTION_NOT_FOUND])
     def temperature(self, fahrenheit=False):
+        temp = Temperature()
         _temp = nvmlDeviceGetTemperature(self.gpu_handle, NVML_TEMPERATURE_GPU)
-        return (float(_temp) * 9 / 5) + 32 if fahrenheit else _temp
+        if fahrenheit:
+            temp.Fahrenheit = (float(_temp) * 9 / 5) + 32
+        else:
+            temp.Celsius = _temp
+        return temp
 
     @omit_nvml_error([NVML_ERROR_FUNCTION_NOT_FOUND, NVML_ERROR_NOT_SUPPORTED])
     def fan_speed(self):
@@ -187,13 +244,19 @@ class NVGPUMonitor(DeviceMonitor):
 
     @omit_nvml_error([NVML_ERROR_FUNCTION_NOT_FOUND, NVML_ERROR_NOT_SUPPORTED])
     def memory_info(self):
-        return nvml_struct_to_dict(nvmlDeviceGetMemoryInfo(self.gpu_handle))
+        mem_info = MemoryInfo()
+        val = nvmlDeviceGetMemoryInfo(self.gpu_handle)
+        mem_info.total = val.total
+        mem_info.free = val.free
+        mem_info.used = val.used
+        return mem_info
 
     @omit_nvml_error([NVML_ERROR_FUNCTION_NOT_FOUND])
     def process_info(self):
         _procs = nvmlDeviceGetComputeRunningProcesses(self.gpu_handle)
         _procs.extend(nvmlDeviceGetGraphicsRunningProcesses(self.gpu_handle))
         ret = {}
+
         for _p in _procs:
             if _p.pid in ret:
                 continue
@@ -202,18 +265,26 @@ class NVGPUMonitor(DeviceMonitor):
             except nvmlExceptionClass(NVML_ERROR_NO_PERMISSION):
                 proc_name = psutil.Process(pid=_p.pid).name()
 
-            ret[_p.pid] = {'name': proc_name,
-                           'used_memory': _p.usedGpuMemory}
+            proc = Process()
+            proc.pid = _p.pid
+            proc.name = proc_name
+            proc.memory = _p.usedGpuMemory if _p.usedGpuMemory is not None else -1
+            proc.usage = -1 # if in the future we can get gpu usage per process
+            ret[_p.pid] = proc
         return ret
 
 
 class CPUMonitor(DeviceMonitor):
-    _summary_funcs = ['name', 'uuid', 'architecture', 'temperature', 'usage', 'memory_info']
+    _summary_funcs = ['name', 'uuid', 'architecture', 'brand', 'temperature', 'usage', 'memory_info']
 
     def __init__(self):
         pass
 
     def name(self):
+        name = subprocess.check_output(["wmic", "cpu", "get", "name"]).decode('utf-8').strip().split("\n")[1]
+        return name
+
+    def brand(self):
         return platform.processor()
 
     def uuid(self):
