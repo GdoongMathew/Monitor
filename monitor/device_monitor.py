@@ -256,7 +256,7 @@ class CPUMonitor(DeviceMonitor):
         for _p in psutil.process_iter(attrs=['pid', 'name', 'cpu_percent', 'memory_info']):
             ret[_p.pid] = {'name': _p.info['name'],
                            'usage': _p.info['cpu_percent'],
-                           'used_memory': _p.info['cpu_percent'].vms}
+                           'used_memory': _p.info['memory_info'].vms}
         return ret
 
 
