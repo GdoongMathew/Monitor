@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from monitor import *
 from pynvml import *
 import platform
 import os
@@ -7,6 +6,15 @@ import psutil
 
 if psutil.WINDOWS:
     import wmi
+
+_nvml_initialized = False
+
+
+def _nvml_init():
+    global _nvml_initialized
+    if not _nvml_initialized:
+        nvmlInit()
+        _nvml_initialized = True
 
 
 def omit_nvml_error(nvml_error_code):
@@ -45,10 +53,6 @@ class DeviceMonitor:
         return NotImplementedError
 
     @abstractmethod
-    def print(self):
-        return NotImplementedError
-
-    @abstractmethod
     def temperature(self):
         return NotImplementedError
 
@@ -58,7 +62,7 @@ class DeviceMonitor:
 
 
 class NVGPUMonitor(DeviceMonitor):
-    nvmlInit()
+    _nvml_init()
 
     _NVML_ARCH = {
         NVML_DEVICE_ARCH_UNKNOWN: 'UNK',
@@ -120,9 +124,6 @@ class NVGPUMonitor(DeviceMonitor):
     def summary(self): 
         pass
 
-    def print(self):
-        pass
-
     @omit_nvml_error(NVML_ERROR_FUNCTION_NOT_FOUND)
     def name(self):
         return nvmlDeviceGetName(self.gpu_handle).decode('utf-8')
@@ -175,8 +176,11 @@ class NVGPUMonitor(DeviceMonitor):
     @omit_nvml_error(NVML_ERROR_FUNCTION_NOT_FOUND)
     def process_info(self):
         _procs = nvmlDeviceGetComputeRunningProcesses(self.gpu_handle)
+        _procs.extend(nvmlDeviceGetGraphicsRunningProcesses(self.gpu_handle))
         ret = {}
         for _p in _procs:
+            if _p.pid in ret:
+                continue
             try:
                 proc_name = str(nvmlSystemGetProcessName(_procs), encoding='big5').split('\\')[-1]
             except NVMLError(NVML_ERROR_NO_PERMISSION):
@@ -221,11 +225,24 @@ class CPUMonitor(DeviceMonitor):
         else:
             return None
 
+    def usage(self):
+        mem_info = self.memory_info()
+        return {'cpu': psutil.cpu_percent(0.05),
+                'memory': mem_info['used'] / mem_info['total'] * 100}
+
     def memory_info(self):
         v_mem = psutil.virtual_memory()
         return {'total': v_mem.total,
                 'free': v_mem.available,
                 'used': v_mem.total - v_mem.available}
+
+    def process_info(self):
+        ret = {}
+        for _p in psutil.process_iter(attrs=['pid', 'name', 'cpu_percent', 'memory_info']):
+            ret[_p.pid] = {'name': _p.info['name'],
+                           'usage': _p.info['cpu_percent'],
+                           'used_memory': _p.info['cpu_percent'].vms}
+        return ret
 
 
 if __name__ == '__main__':
