@@ -10,8 +10,8 @@ message MemoryInfo {
 
 message Temperature {
   oneof temp_reading {
-    int32 Celsius = 1;
-    int32 Fahrenheit = 2;
+    float Celsius = 1;
+    float Fahrenheit = 2;
   }
 }
 
@@ -31,23 +31,24 @@ message BasicInfo {
   string brand = 6;
 }
 
-message CommonMatrixInfo {
+message MatrixInfo {
   Temperature temperature = 1;
   MemoryInfo memory_info = 2;
 
   // percentage
   float usage = 3;
   float memory_usage = 4;
+
+  repeated Process process = 5;
+
 }
 
 message NVGPU {
   BasicInfo info = 1;
-  CommonMatrixInfo matrix = 2;
+  MatrixInfo matrix = 2;
   int32 cuda_version = 3;
   string cuda_capacity = 4;
   string driver_version = 5;
-
-  repeated Process process = 6;
 }
 
 message NVGPUArray {
@@ -57,6 +58,5 @@ message NVGPUArray {
 
 message CPU {
   BasicInfo info = 1;
-  CommonMatrixInfo matrix = 2;
-  repeated Process process = 3;
+  MatrixInfo matrix = 2;
 }
