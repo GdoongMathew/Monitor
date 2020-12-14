@@ -19,7 +19,7 @@ message Process {
   int32 pid = 1;
   string name = 2;
   int64 memory = 3;
-  int32 usage = 4;
+  float usage = 4;
 }
 
 message BasicInfo {
