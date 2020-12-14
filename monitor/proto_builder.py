@@ -1,4 +1,4 @@
-from device_pb2 import *
+from .device_pb2 import *
 
 
 class ProtoBuilder:
@@ -39,8 +39,12 @@ class MemoryInfoProtoBuilder(ProtoBuilder):
     proto = MemoryInfo
 
     @classmethod
-    def build_proto(cls, total=None, free=None, used=None, **kwargs):
-        return cls._build_proto(total=total, free=free, used=used)
+    def build_proto(cls, memory_info=None, **kwargs):
+        if memory_info is None:
+            memory_info = {'total': None,
+                           'free': None,
+                           'used': None}
+        return cls._build_proto(**memory_info)
 
 
 class ProcessProtoBuilder(ProtoBuilder):
@@ -79,14 +83,14 @@ class MatrixInfoProtoBuilder(ProtoBuilder):
     proto = MatrixInfo
 
     @classmethod
-    def build_proto(cls, usage=None, memory_usage=None, **kwargs):
+    def build_proto(cls, usage=None, **kwargs):
         temp_proto = TemperatureProtoBuilder.build_proto(**kwargs)
         memory_proto = MemoryInfoProtoBuilder.build_proto(**kwargs)
         proc_proto_list = RepeatedProcessProtoBuilder.build_proto(**kwargs)
         return cls._build_proto(temperature=temp_proto,
                                 memory_info=memory_proto,
-                                usage=usage,
-                                memory_usage=memory_usage,
+                                usage=usage['usage'],
+                                memory_usage=usage['memory_usage'],
                                 process=proc_proto_list)
 
 
