@@ -1,5 +1,5 @@
-from .device_monitor import NVGPUMonitor
-from .device_monitor import CPUMonitor
+from .device_monitor import NVGPUReader
+from .device_monitor import CPUReader
 
 
 
