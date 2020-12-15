@@ -13,6 +13,7 @@ class BasicMonitor:
         self.proto_que = proto_que
         self.interval = interval
         self._thd = threading.Thread(target=self.monitor)
+        self.proto = self.get_proto(basic_info=True, matrix_info=True)
 
     def get_proto(self, **kwargs):
         proto = self.reader.to_proto(**kwargs)
@@ -20,19 +21,11 @@ class BasicMonitor:
 
     def monitor(self):
         t_start = time.time()
-        first_time = True
-        proto = None
         while not self.stop_event.is_set():
             if time.time() - t_start >= self.interval:
-                if first_time:
-                    proto = self.get_proto(basic_info=True,
-                                           matrix_info=True)
-
-                else:
-                    _tmp_proto = self.get_proto(basic_info=False,
-                                                matrix_info=True)
-                    print(_tmp_proto)
-                return proto
+                proto = self.get_proto(basic_info=False, matrix_info=True)
+                self.proto.matrix.CopyFrom(proto.matrix)
+                self.proto_que.put(self.proto)
 
     def start(self):
         self.stop_event.clear()
@@ -40,3 +33,4 @@ class BasicMonitor:
 
     def stop(self):
         self.stop_event.set()
+        self._thd.join()
