@@ -4,7 +4,7 @@ import platform
 import os
 import psutil
 import subprocess
-from .proto_builder import *
+from .proto import CPUProtoBuilder, NVGPUProtoBuilder
 
 if psutil.WINDOWS:
     import pythoncom

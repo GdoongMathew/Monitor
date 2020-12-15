@@ -1,4 +1,4 @@
-from .device_pb2 import *
+from reader.proto.device_pb2 import *
 
 
 class ProtoBuilder:
@@ -87,6 +87,7 @@ class MatrixInfoProtoBuilder(ProtoBuilder):
         temp_proto = TemperatureProtoBuilder.build_proto(**kwargs)
         memory_proto = MemoryInfoProtoBuilder.build_proto(**kwargs)
         proc_proto_list = RepeatedProcessProtoBuilder.build_proto(**kwargs)
+
         return cls._build_proto(temperature=temp_proto,
                                 memory_info=memory_proto,
                                 usage=usage['usage'],
