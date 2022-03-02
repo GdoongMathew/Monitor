@@ -320,7 +320,7 @@ class CPUReader(DeviceReader):
                 else:
                     ret = {'Celsius': (temp / 10) - 273.15}
             except Exception:
-                ret = {'Celsius': None}
+                ret = {'Fahrenheit': None} if fahrenheit else {'Celsius': None}
         return ret
 
     def usage(self):
