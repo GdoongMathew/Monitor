@@ -63,7 +63,8 @@ class DeviceReader:
         # gathering information
         info = {}
         _info_list = []
-        assert basic_info or matrix_info, 'Either one of basic_info or matrix_info should be True'
+        if not basic_info and not matrix_info:
+            raise ValueError('Either one of basic_info or matrix_info should be True')
         if basic_info:
             _info_list.extend(self._basic_info_list)
         if matrix_info:
@@ -106,16 +107,40 @@ class NVGPUReader(DeviceReader):
         NVML_BRAND_GRID: 'Grid',
         NVML_BRAND_GEFORCE: 'GeForce',
         NVML_BRAND_TITAN: 'Titan',
+        NVML_BRAND_NVIDIA_VAPPS: 'Nvidia Virtual Application',
+        NVML_BRAND_NVIDIA_VPC: 'Nvidia Virtual PC',
+        NVML_BRAND_NVIDIA_VCS: 'Virtual Computer Server',
+        NVML_BRAND_NVIDIA_VWS: 'RTX Virtual Workstation',
+        NVML_BRAND_NVIDIA_VGAMING: 'vGaming',
+        NVML_BRAND_QUADRO_RTX: 'Quadro-RTX',
+        NVML_BRAND_NVIDIA_RTX: 'Nvidia-RTX',
+        NVML_BRAND_NVIDIA: 'Nvidia',
         NVML_BRAND_COUNT: 'Count',
     }
 
-    _basic_info_list = ['index', 'name', 'uuid', 'serial', 'architecture', 'brand']
-    _matrix_info_list = ['driver_version', 'cuda_version', 'usage', 'power_usage', 'temperature', 'fan_speed',
-                         'memory_info', 'process_info']
+    _basic_info_list = [
+        'index',
+        'name',
+        'uuid',
+        'serial',
+        'architecture',
+        'brand'
+    ]
+    _matrix_info_list = [
+        'driver_version',
+        'cuda_version',
+        'usage',
+        'power_usage',
+        'temperature',
+        'fan_speed',
+        'memory_info',
+        'process_info'
+    ]
 
     def __init__(self, idx=None, uuid=None, pci_bus_id=None, serial=None):
         _kwargs = [idx, uuid, pci_bus_id, serial]
-        assert _kwargs.count(None) >= 3, 'provide not more than one of idx, uuid, pci_bus_id or serial.'
+        if _kwargs.count(None) < 3:
+            raise ValueError('provide not more than one of idx, uuid, pci_bus_id or serial.')
         if _kwargs.count(None) == 4:
             idx = 0
 
@@ -127,23 +152,27 @@ class NVGPUReader(DeviceReader):
         }
 
         if idx is not None:
-            assert isinstance(idx, int)
+            if not isinstance(idx, int):
+                raise TypeError(f'idx should be integer, get {type(idx)}.')
             _handle_func = _create_handle_func['idx']
             _func_input = idx
 
         elif uuid is not None:
-            assert isinstance(uuid, str)
+            if not isinstance(uuid, str):
+                raise TypeError(f'uuid should be integer, get {type(uuid)}.')
             _handle_func = _create_handle_func['uuid']
             _func_input = bytes(uuid, encoding='utf-8')
 
         elif pci_bus_id is not None:
-            assert isinstance(pci_bus_id, str)
+            if not isinstance(pci_bus_id, str):
+                raise TypeError(f'pci_bus_id should be integer, get {type(pci_bus_id)}.')
             _handle_func = _create_handle_func['pci_bus_id']
             _func_input = bytes(pci_bus_id, encoding='utf-8')
 
         else:
             # serial
-            assert isinstance(serial, str)
+            if not isinstance(serial, str):
+                raise TypeError(f'serial should be integer, get {type(serial)}.')
             _handle_func = _create_handle_func['serial']
             _func_input = bytes(serial, encoding='utf-8')
 
@@ -240,8 +269,17 @@ class NVGPUReader(DeviceReader):
 
 
 class CPUReader(DeviceReader):
-    _basic_info_list = ['name', 'uuid', 'architecture', 'brand']
-    _matrix_info_list = ['temperature', 'usage', 'memory_info']
+    _basic_info_list = [
+        'name',
+        'uuid',
+        'architecture',
+        'brand'
+    ]
+    _matrix_info_list = [
+        'temperature',
+        'usage',
+        'memory_info'
+    ]
 
     def __init__(self):
         pass
