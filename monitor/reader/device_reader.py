@@ -348,6 +348,3 @@ class CPUReader(DeviceReader):
         ret = self.summary(**kwargs)
         return CPUProtoBuilder.build_proto(**ret)
 
-
-if __name__ == '__main__':
-    pass

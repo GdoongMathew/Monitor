@@ -1,4 +1,4 @@
-from .reader import NVGPUReader
-from .reader import CPUReader
-
 from .monitor import BasicMonitor
+
+from .monitor import NVGPUReader
+from .monitor import CPUReader
