@@ -1,0 +1,4 @@
+pynvml >= 11.4.1
+psutil
+pywin32; platform_system == "Windows"
+wmi; platform_system == "Windows"

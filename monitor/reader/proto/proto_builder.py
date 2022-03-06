@@ -1,4 +1,4 @@
-from reader.proto.device_pb2 import *
+from .device_pb2 import *
 
 
 class ProtoBuilder:

@@ -1,4 +1,4 @@
-from reader.device_reader import DeviceReader
+from .reader.device_reader import DeviceReader
 import threading
 import time
 import queue
