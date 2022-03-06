@@ -1,6 +1,6 @@
-from reader import CPUReader, NVGPUReader
-from reader.proto.device_pb2 import NVGPU
-from reader.proto.device_pb2 import CPU
+from monitor.reader import CPUReader, NVGPUReader
+from monitor.reader.proto.device_pb2 import NVGPU
+from monitor.reader.proto.device_pb2 import CPU
 import pytest
 
 
