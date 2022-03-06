@@ -285,18 +285,25 @@ class CPUReader(DeviceReader):
         pass
 
     def name(self):
-        name = subprocess.check_output(["wmic", "cpu", "get", "name"]).decode('utf-8').strip().split("\n")[1]
-        return name
+        try:
+            if psutil.WINDOWS:
+                return subprocess.check_output(["wmic", "cpu", "get", "name"]).decode('utf-8').strip().split("\n")[1]
+            elif psutil.LINUX:
+                return subprocess.check_output("lscpu | sed -nr '/Model name/ s/  / /g; s/.*:\s*(.*) @ .*/\\1/p'",
+                                               shell=True).decode('utf-8').strip()
+        except Exception:
+            return None
 
     def brand(self):
         return platform.processor()
 
     def uuid(self):
-        if psutil.LINUX:
-            return os.popen("hdparm -I /dev/sda | grep 'Serial Number'").read().split()[-1]
-        elif psutil.WINDOWS:
-            return wmi.WMI().Win32_ComputerSystemProduct()[0].UUID
-        else:
+        try:
+            if psutil.LINUX:
+                return os.popen("hdparm -I /dev/sda | grep 'Serial Number'").read().split()[-1]
+            elif psutil.WINDOWS:
+                return wmi.WMI().Win32_ComputerSystemProduct()[0].UUID
+        except Exception:
             return None
 
     def architecture(self):
@@ -347,4 +354,3 @@ class CPUReader(DeviceReader):
     def to_proto(self, **kwargs):
         ret = self.summary(**kwargs)
         return CPUProtoBuilder.build_proto(**ret)
-
