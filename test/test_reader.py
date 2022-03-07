@@ -40,3 +40,27 @@ def test_proto(reader, proto):
     info = reader.to_proto()
     assert isinstance(info, proto)
 
+
+@pytest.mark.parametrize('reader, basic_info, matrix_info',
+                         [
+                             ('cpu_reader', True, True),
+                             ('cpu_reader', False, True),
+                             ('cpu_reader', True, False),
+                             ('gpu_reader', True, True),
+                             ('gpu_reader', False, True),
+                             ('gpu_reader', True, False),
+                         ], indirect=['reader'])
+def test_summary(reader, basic_info, matrix_info):
+    summary = reader.summary(basic_info=basic_info, matrix_info=matrix_info)
+    assert isinstance(summary, dict)
+
+    if basic_info:
+        assert set(reader._basic_info_list).issubset(summary.keys())
+    else:
+        assert not set(reader._basic_info_list).issubset(summary.keys())
+
+    if matrix_info:
+        assert set(reader._matrix_info_list).issubset(summary.keys())
+    else:
+        assert not set(reader._matrix_info_list).issubset(summary.keys())
+
