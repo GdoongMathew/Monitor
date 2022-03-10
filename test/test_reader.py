@@ -4,20 +4,20 @@ from monitor.reader.proto.device_pb2 import CPU
 import pytest
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def cpu_reader():
-    return CPUReader()
+    yield CPUReader()
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def gpu_reader():
-    return NVGPUReader(idx=0)
+    yield NVGPUReader(idx=0)
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def reader(request):
     reader = request.getfixturevalue(request.param)
-    return reader
+    yield reader
 
 
 @pytest.mark.parametrize("reader",
@@ -63,4 +63,5 @@ def test_summary(reader, basic_info, matrix_info):
         assert set(reader._matrix_info_list).issubset(summary.keys())
     else:
         assert not set(reader._matrix_info_list).issubset(summary.keys())
+
 
