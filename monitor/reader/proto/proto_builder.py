@@ -87,11 +87,14 @@ class MatrixInfoProtoBuilder(ProtoBuilder):
         temp_proto = TemperatureProtoBuilder.build_proto(**kwargs)
         memory_proto = MemoryInfoProtoBuilder.build_proto(**kwargs)
         proc_proto_list = RepeatedProcessProtoBuilder.build_proto(**kwargs)
+        usage = {} if usage is None else usage
+        if not isinstance(usage, dict):
+            raise TypeError('usage should be a dictionary.')
 
         return cls._build_proto(temperature=temp_proto,
                                 memory_info=memory_proto,
-                                usage=usage['usage'],
-                                memory_usage=usage['memory_usage'],
+                                usage=usage.get('usage', None),
+                                memory_usage=usage.get('memory_usage', None),
                                 process=proc_proto_list)
 
 
