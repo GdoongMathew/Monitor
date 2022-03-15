@@ -15,6 +15,11 @@ def gpu_reader():
 
 
 @pytest.fixture(scope='module')
+def non_reader():
+    yield None
+
+
+@pytest.fixture(scope='module')
 def reader(request):
     reader = request.getfixturevalue(request.param)
     yield reader
