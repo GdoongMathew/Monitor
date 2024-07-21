@@ -2,7 +2,7 @@ import queue
 import threading
 import time
 
-from .reader.device_reader import DeviceReader
+from monitor.reader.base import DeviceReader
 
 
 class BasicMonitor:

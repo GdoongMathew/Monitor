@@ -24,7 +24,7 @@ def test_name(reader: "DeviceReader"):
     indirect=["reader"],
 )
 def test_proto(reader: "DeviceReader", proto):
-    info = reader.to_proto()
+    info = reader.to_proto(basic_info=True, matrix_info=False)
     assert isinstance(info, proto)
 
 
