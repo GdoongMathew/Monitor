@@ -147,7 +147,7 @@ class NVGPUReader(DeviceReader):
 
         self.gpu_handle = call_nvml_init(_handle_func)(_func_input)
 
-    def to_proto(self, basic_info=True, matrix_info=True):
+    def to_proto(self, basic_info=True, matrix_info=True) -> NVGPUProtoBuilder:
         ret = self.summary(basic_info=basic_info, matrix_info=matrix_info)
         return NVGPUProtoBuilder.build_proto(**ret)
 
@@ -209,7 +209,7 @@ class NVGPUReader(DeviceReader):
 
     @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND])
-    def temperature(self, fahrenheit=False):
+    def temperature(self, fahrenheit=False) -> dict[str, float]:
         _temp = pynvml.nvmlDeviceGetTemperature(self.gpu_handle, pynvml.NVML_TEMPERATURE_GPU)
         return {"Fahrenheit": (float(_temp) * 9 / 5) + 32} if fahrenheit else {"Celsius": _temp}
 
@@ -220,7 +220,7 @@ class NVGPUReader(DeviceReader):
 
     @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND, pynvml.NVML_ERROR_NOT_SUPPORTED])
-    def memory_info(self):
+    def memory_info(self) -> dict[str, float]:
         val = pynvml.nvmlDeviceGetMemoryInfo(self.gpu_handle)
         ret = {"total": val.total, "free": val.free, "used": val.used}
         return ret

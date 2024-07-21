@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import platform
 import subprocess
@@ -46,7 +48,7 @@ class CPUReader(DeviceReader):
         except Exception:
             return "Unknown CPU"
 
-    def brand(self):
+    def brand(self) -> str:
         return platform.processor()
 
     def uuid(self):
@@ -58,18 +60,15 @@ class CPUReader(DeviceReader):
         except Exception:
             return None
 
-    def architecture(self):
+    def architecture(self) -> str:
         return platform.machine()
 
-    def temperature(self, fahrenheit=False):
+    def temperature(self, fahrenheit=False) -> dict[str, float]:
         if hasattr(psutil, "sensors_temperatures"):
             temp_readings = psutil.sensors_temperatures(fahrenheit=fahrenheit)["coretemp"]
-            temp = []
-            for reading in temp_readings:
-                if "Core" in reading.label:
-                    temp.append(reading.current)
+            temp = list(map(lambda x: x.current, filter(lambda x: "Core" in x.label, temp_readings)))
             temp = sum(temp) / len(temp) if temp else None
-            ret = {"Fahrenheit": temp} if fahrenheit else {"Celsius": temp}
+            ret = {"Fahrenheit" if fahrenheit else "Celsius": temp}
         else:
             try:
                 w = wmi.WMI("root\wmi")
@@ -110,6 +109,6 @@ class CPUReader(DeviceReader):
             )
         return ret
 
-    def to_proto(self, **kwargs):
+    def to_proto(self, **kwargs) -> CPUProtoBuilder:
         ret = self.summary(**kwargs)
         return CPUProtoBuilder.build_proto(**ret)
