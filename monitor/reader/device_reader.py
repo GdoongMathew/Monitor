@@ -1,4 +1,6 @@
+from __future__ import annotations
 from abc import abstractmethod
+
 from pynvml import *
 import platform
 import os
@@ -24,9 +26,9 @@ def _nvml_init():
 
 def omit_nvml_error(nvml_error_codes):
     def wrapper(func):
-        def inner(self, *args, **kwargs):
+        def inner(*args, **kwargs):
             try:
-                ret = func(self, *args, **kwargs)
+                ret = func(*args, **kwargs)
                 return ret
             except NVMLError as e:
                 if e.value in nvml_error_codes:
@@ -73,6 +75,9 @@ class DeviceReader:
             info[func] = self.__getattribute__(func)()
         return info
 
+    def name(self) -> str:
+        return "Unknown Device"
+
     @abstractmethod
     def temperature(self):
         raise NotImplementedError
@@ -97,6 +102,8 @@ class NVGPUReader(DeviceReader):
         NVML_DEVICE_ARCH_VOLTA: 'Volta',
         NVML_DEVICE_ARCH_TURING: 'Turing',
         NVML_DEVICE_ARCH_AMPERE: 'Ampere',
+        NVML_DEVICE_ARCH_ADA: "Ada",
+        NVML_DEVICE_ARCH_HOPPER: "Hopper",
     }
 
     _NVML_BRAND = {
@@ -111,10 +118,13 @@ class NVGPUReader(DeviceReader):
         NVML_BRAND_NVIDIA_VPC: 'NVIDIA Virtual PC',
         NVML_BRAND_NVIDIA_VCS: 'NVIDIA Virtual Computer Server',
         NVML_BRAND_NVIDIA_VWS: 'NVIDIA RTX Virtual Workstation',
-        NVML_BRAND_NVIDIA_VGAMING: 'NVIDIA vGaming',
+        NVML_BRAND_NVIDIA_CLOUD_GAMING: "NVIDIA Cloud Gaming",
+        # NVML_BRAND_NVIDIA_VGAMING: 'NVIDIA vGaming',
         NVML_BRAND_QUADRO_RTX: 'Quadro RTX',
         NVML_BRAND_NVIDIA_RTX: 'Nvidia RTX',
         NVML_BRAND_NVIDIA: 'NVIDIA',
+        NVML_BRAND_GEFORCE_RTX: 'GeForce RTX',
+        NVML_BRAND_TITAN_RTX: 'Titan RTX',
     }
 
     _basic_info_list = [
@@ -182,11 +192,11 @@ class NVGPUReader(DeviceReader):
         return NVGPUProtoBuilder.build_proto(**ret)
 
     @omit_nvml_error([NVML_ERROR_FUNCTION_NOT_FOUND])
-    def name(self):
-        return nvmlDeviceGetName(self.gpu_handle).decode('utf-8')
+    def name(self) -> str:
+        return nvmlDeviceGetName(self.gpu_handle)
 
     @omit_nvml_error([NVML_ERROR_FUNCTION_NOT_FOUND])
-    def index(self):
+    def index(self) -> int:
         return nvmlDeviceGetIndex(self.gpu_handle)
 
     @omit_nvml_error([NVML_ERROR_FUNCTION_NOT_FOUND])
@@ -206,8 +216,8 @@ class NVGPUReader(DeviceReader):
         return self._NVML_BRAND[nvmlDeviceGetBrand(self.gpu_handle)]
 
     @omit_nvml_error([NVML_ERROR_FUNCTION_NOT_FOUND, NVML_ERROR_NOT_SUPPORTED])
-    def driver_version(self):
-        return nvmlSystemGetDriverVersion().decode('utf-8')
+    def driver_version(self) -> str:
+        return nvmlSystemGetDriverVersion()
 
     @omit_nvml_error([NVML_ERROR_FUNCTION_NOT_FOUND])
     def cuda_version(self):
@@ -283,7 +293,7 @@ class CPUReader(DeviceReader):
     def __init__(self):
         pass
 
-    def name(self):
+    def name(self) -> str:
         try:
             if psutil.WINDOWS:
                 return subprocess.check_output(["wmic", "cpu", "get", "name"]).decode('utf-8').strip().split("\n")[1]
@@ -291,7 +301,7 @@ class CPUReader(DeviceReader):
                 return subprocess.check_output("lscpu | sed -nr '/Model name/ s/  / /g; s/.*:\s*(.*) @ .*/\\1/p'",
                                                shell=True).decode('utf-8').strip()
         except Exception:
-            return None
+            return "Unknown CPU"
 
     def brand(self):
         return platform.processor()
