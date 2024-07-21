@@ -52,5 +52,5 @@ def test_summary(reader: "DeviceReader", basic_info, matrix_info):
     summary = reader.summary(basic_info=basic_info, matrix_info=matrix_info)
     assert isinstance(summary, dict)
 
-    assert bool(set(reader._basic_info_list).issubset(summary.keys())) == basic_info
-    assert bool(set(reader._matrix_info_list).issubset(summary.keys())) == matrix_info
+    assert set(reader._basic_info_list).issubset(summary.keys()) == basic_info
+    assert set(reader._matrix_info_list).issubset(summary.keys()) == matrix_info
