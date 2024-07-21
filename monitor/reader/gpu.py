@@ -236,7 +236,7 @@ class NVGPUReader(DeviceReader):
             if _p.pid in ret:
                 continue
             try:
-                proc_name = str(pynvml.nvmlSystemGetProcessName(_p.pid), encoding="big5").split("\\")[-1]
+                proc_name = pynvml.nvmlSystemGetProcessName(_p.pid).split("\\")[-1]
             except pynvml.nvmlExceptionClass(pynvml.NVML_ERROR_NO_PERMISSION):
                 proc_name = psutil.Process(pid=_p.pid).name()
 
