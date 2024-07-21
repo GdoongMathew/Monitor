@@ -50,6 +50,14 @@ def nvml_struct_to_dict(_structure):
     return {i: getattr(_structure, i) for i, _ in _structure._fields_}
 
 
+def call_nvml_init(func):
+    def wrapper(*args, **kwargs):
+        pynvml.nvmlInit()
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
 class DeviceReader:
     _basic_info_list = []
     _matrix_info_list = []
@@ -85,8 +93,6 @@ class DeviceReader:
 
 
 class NVGPUReader(DeviceReader):
-    pynvml.nvmlInit()
-
     _NVML_ARCH = {
         pynvml.NVML_DEVICE_ARCH_UNKNOWN: "UNK",
         pynvml.NVML_DEVICE_ARCH_KEPLER: "Kepler",
@@ -171,72 +177,87 @@ class NVGPUReader(DeviceReader):
             _handle_func = _create_handle_func["serial"]
             _func_input = bytes(serial, encoding="utf-8")
 
-        self.gpu_handle = _handle_func(_func_input)
+        self.gpu_handle = call_nvml_init(_handle_func)(_func_input)
 
     def to_proto(self, basic_info=True, matrix_info=True):
         ret = self.summary(basic_info=basic_info, matrix_info=matrix_info)
         return NVGPUProtoBuilder.build_proto(**ret)
 
+    @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND])
     def name(self) -> str:
         return pynvml.nvmlDeviceGetName(self.gpu_handle)
 
+    @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND])
     def index(self) -> int:
         return pynvml.nvmlDeviceGetIndex(self.gpu_handle)
 
+    @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND])
     def uuid(self):
         return pynvml.nvmlDeviceGetUUID(self.gpu_handle)
 
+    @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND, pynvml.NVML_ERROR_NOT_SUPPORTED])
     def serial(self):
         return pynvml.nvmlDeviceGetSerial(self.gpu_handle)
 
+    @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND, pynvml.NVML_ERROR_NOT_SUPPORTED])
     def architecture(self):
         return self._NVML_ARCH[pynvml.nvmlDeviceGetArchitecture(self.gpu_handle)]
 
+    @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND, pynvml.NVML_ERROR_NOT_SUPPORTED])
     def brand(self):
         return self._NVML_BRAND[pynvml.nvmlDeviceGetBrand(self.gpu_handle)]
 
+    @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND, pynvml.NVML_ERROR_NOT_SUPPORTED])
     def driver_version(self) -> str:
         return pynvml.nvmlSystemGetDriverVersion()
 
+    @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND])
     def cuda_version(self):
         return pynvml.nvmlSystemGetCudaDriverVersion_v2()
 
+    @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND])
     def cuda_capacity(self):
         return str(pynvml.nvmlDeviceGetCudaComputeCapability(self.gpu_handle))
 
+    @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND])
     def usage(self):
         usage = pynvml.nvmlDeviceGetUtilizationRates(self.gpu_handle)
         return {"usage": usage.gpu, "memory_usage": usage.memory}
 
+    @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND])
     def power_usage(self):
         return pynvml.nvmlDeviceGetPowerUsage(self.gpu_handle)
 
+    @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND])
     def temperature(self, fahrenheit=False):
         _temp = pynvml.nvmlDeviceGetTemperature(self.gpu_handle, pynvml.NVML_TEMPERATURE_GPU)
         return {"Fahrenheit": (float(_temp) * 9 / 5) + 32} if fahrenheit else {"Celsius": _temp}
 
+    @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND, pynvml.NVML_ERROR_NOT_SUPPORTED])
     def fan_speed(self):
         return pynvml.nvmlDeviceGetFanSpeed(self.gpu_handle)
 
+    @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND, pynvml.NVML_ERROR_NOT_SUPPORTED])
     def memory_info(self):
         val = pynvml.nvmlDeviceGetMemoryInfo(self.gpu_handle)
         ret = {"total": val.total, "free": val.free, "used": val.used}
         return ret
 
+    @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND])
     def process_info(self):
         _procs = pynvml.nvmlDeviceGetComputeRunningProcesses(self.gpu_handle)

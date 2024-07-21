@@ -15,34 +15,42 @@ def test_name(reader: "DeviceReader"):
         assert isinstance(name, str)
 
 
-@pytest.mark.parametrize("reader, proto", [("cpu_reader", CPU), ("gpu_reader", NVGPU)], indirect=["reader"])
+@pytest.mark.parametrize(
+    "reader, proto",
+    [
+        ("cpu_reader", CPU),
+        ("gpu_reader", NVGPU),
+    ],
+    indirect=["reader"],
+)
 def test_proto(reader: "DeviceReader", proto):
     info = reader.to_proto()
     assert isinstance(info, proto)
 
 
 @pytest.mark.parametrize(
-    "reader, basic_info, matrix_info",
-    [
-        ("cpu_reader", True, True),
-        ("cpu_reader", False, True),
-        ("cpu_reader", True, False),
-        ("gpu_reader", True, True),
-        ("gpu_reader", False, True),
-        ("gpu_reader", True, False),
-    ],
+    "reader",
+    ["cpu_reader", "gpu_reader"],
     indirect=["reader"],
 )
+@pytest.mark.parametrize(
+    "basic_info",
+    [True, False],
+)
+@pytest.mark.parametrize(
+    "matrix_info",
+    [True, False],
+)
 def test_summary(reader: "DeviceReader", basic_info, matrix_info):
+    if not basic_info and not matrix_info:
+        with pytest.raises(
+            ValueError,
+            match="Either one of basic_info or matrix_info should be True",
+        ):
+            reader.summary(basic_info=basic_info, matrix_info=matrix_info)
+        return
     summary = reader.summary(basic_info=basic_info, matrix_info=matrix_info)
     assert isinstance(summary, dict)
 
-    if basic_info:
-        assert set(reader._basic_info_list).issubset(summary.keys())
-    else:
-        assert not set(reader._basic_info_list).issubset(summary.keys())
-
-    if matrix_info:
-        assert set(reader._matrix_info_list).issubset(summary.keys())
-    else:
-        assert not set(reader._matrix_info_list).issubset(summary.keys())
+    assert bool(set(reader._basic_info_list).issubset(summary.keys())) == basic_info
+    assert bool(set(reader._matrix_info_list).issubset(summary.keys())) == matrix_info
