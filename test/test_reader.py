@@ -5,7 +5,7 @@ import pytest
 from monitor.reader.proto.device_pb2 import CPU, NVGPU
 
 if TYPE_CHECKING:
-    from monitor.reader.device_reader import DeviceReader
+    from monitor.reader.base import DeviceReader
 
 
 @pytest.mark.parametrize("reader", ["cpu_reader", "gpu_reader"], indirect=["reader"])
