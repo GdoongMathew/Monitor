@@ -1,4 +1,4 @@
-from .reader import NVGPUReader
-from .reader import CPUReader
+from monitor.monitor import BasicMonitor
+from monitor.reader import CPUReader, NVGPUReader
 
-from .monitor import BasicMonitor
+__all__ = ["BasicMonitor", "CPUReader", "NVGPUReader"]

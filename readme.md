@@ -5,7 +5,7 @@
 
 ## Usage
 ```python
-from monitor import NVGPUReader
+from monitor.reader import NVGPUReader
 reader = NVGPUReader(idx=0)
 reader_proto = reader.to_proto(basic_info=True, matrix_info=True)
 ```
@@ -13,8 +13,8 @@ reader_proto = reader.to_proto(basic_info=True, matrix_info=True)
 Using monitor:
 
 ```python
-from monitor import NVGPUReader
-from monitor.monitor import BasicMonitor
+from monitor.reader import NVGPUReader
+from monitor import BasicMonitor
 
 gpu_reader = NVGPUReader(idx=0)
 monitor = BasicMonitor(gpu_reader)

@@ -1,64 +1,38 @@
 from typing import TYPE_CHECKING
-from monitor import CPUReader, NVGPUReader
-from monitor.reader.proto.device_pb2 import NVGPU
-from monitor.reader.proto.device_pb2 import CPU
+
 import pytest
+
+from monitor.reader.proto.device_pb2 import CPU, NVGPU
 
 if TYPE_CHECKING:
     from monitor.reader.device_reader import DeviceReader
 
 
-@pytest.fixture(scope='module')
-def cpu_reader():
-    yield CPUReader()
-
-
-@pytest.fixture(scope='module')
-def gpu_reader():
-    yield NVGPUReader(idx=0)
-
-
-@pytest.fixture(scope='module')
-def non_reader():
-    yield None
-
-
-@pytest.fixture(scope='module')
-def reader(request):
-    reader = request.getfixturevalue(request.param)
-    yield reader
-
-
-@pytest.mark.parametrize("reader",
-                         [
-                             'cpu_reader',
-                             'gpu_reader'
-                         ], indirect=['reader'])
+@pytest.mark.parametrize("reader", ["cpu_reader", "gpu_reader"], indirect=["reader"])
 def test_name(reader: "DeviceReader"):
     name = reader.name()
     if name is not None:
         assert isinstance(name, str)
 
 
-@pytest.mark.parametrize("reader, proto",
-                         [
-                             ('cpu_reader', CPU),
-                             ('gpu_reader', NVGPU)
-                         ], indirect=['reader'])
+@pytest.mark.parametrize("reader, proto", [("cpu_reader", CPU), ("gpu_reader", NVGPU)], indirect=["reader"])
 def test_proto(reader: "DeviceReader", proto):
     info = reader.to_proto()
     assert isinstance(info, proto)
 
 
-@pytest.mark.parametrize('reader, basic_info, matrix_info',
-                         [
-                             ('cpu_reader', True, True),
-                             ('cpu_reader', False, True),
-                             ('cpu_reader', True, False),
-                             ('gpu_reader', True, True),
-                             ('gpu_reader', False, True),
-                             ('gpu_reader', True, False),
-                         ], indirect=['reader'])
+@pytest.mark.parametrize(
+    "reader, basic_info, matrix_info",
+    [
+        ("cpu_reader", True, True),
+        ("cpu_reader", False, True),
+        ("cpu_reader", True, False),
+        ("gpu_reader", True, True),
+        ("gpu_reader", False, True),
+        ("gpu_reader", True, False),
+    ],
+    indirect=["reader"],
+)
 def test_summary(reader: "DeviceReader", basic_info, matrix_info):
     summary = reader.summary(basic_info=basic_info, matrix_info=matrix_info)
     assert isinstance(summary, dict)

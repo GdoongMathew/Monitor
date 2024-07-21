@@ -1,5 +1,3 @@
-from .device_reader import NVGPUReader
-from .device_reader import CPUReader
+from monitor.reader.device_reader import CPUReader, NVGPUReader
 
-
-
+__all__ = ["CPUReader", "NVGPUReader"]

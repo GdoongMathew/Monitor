@@ -1,4 +1,12 @@
-from .device_pb2 import *
+from .device_pb2 import (
+    CPU,
+    NVGPU,
+    BasicInfo,
+    MatrixInfo,
+    MemoryInfo,
+    Process,
+    Temperature,
+)
 
 
 class ProtoBuilder:
@@ -11,7 +19,7 @@ class ProtoBuilder:
         for key, item in kwargs.items():
             if key in proto.DESCRIPTOR.fields_by_name and item is not None:
                 _field = getattr(proto, key)
-                if hasattr(_field, 'CopyFrom'):
+                if hasattr(_field, "CopyFrom"):
                     _field.CopyFrom(item)
                 elif isinstance(item, (list, set, tuple)):
                     _field.extend(item)
@@ -41,9 +49,7 @@ class MemoryInfoProtoBuilder(ProtoBuilder):
     @classmethod
     def build_proto(cls, memory_info=None, **kwargs):
         if memory_info is None:
-            memory_info = {'total': None,
-                           'free': None,
-                           'used': None}
+            memory_info = {"total": None, "free": None, "used": None}
         return cls._build_proto(**memory_info)
 
 
@@ -56,7 +62,6 @@ class ProcessProtoBuilder(ProtoBuilder):
 
 
 class RepeatedProcessProtoBuilder(ProtoBuilder):
-
     @classmethod
     def build_proto(cls, process=None, **kwargs):
         _proto_list = []
@@ -71,12 +76,14 @@ class BasicInfoProtoBuilder(ProtoBuilder):
 
     @classmethod
     def build_proto(cls, name=None, index=None, serial=None, uuid=None, architecture=None, brand=None, **kwargs):
-        return cls._build_proto(name=name,
-                                index=index,
-                                serial=serial,
-                                uuid=uuid,
-                                architecture=architecture,
-                                brand=brand)
+        return cls._build_proto(
+            name=name,
+            index=index,
+            serial=serial,
+            uuid=uuid,
+            architecture=architecture,
+            brand=brand,
+        )
 
 
 class MatrixInfoProtoBuilder(ProtoBuilder):
@@ -89,28 +96,31 @@ class MatrixInfoProtoBuilder(ProtoBuilder):
         proc_proto_list = RepeatedProcessProtoBuilder.build_proto(**kwargs)
         usage = {} if usage is None else usage
         if not isinstance(usage, dict):
-            raise TypeError('usage should be a dictionary.')
+            raise TypeError("usage should be a dictionary.")
 
-        return cls._build_proto(temperature=temp_proto,
-                                memory_info=memory_proto,
-                                usage=usage.get('usage', None),
-                                memory_usage=usage.get('memory_usage', None),
-                                process=proc_proto_list)
+        return cls._build_proto(
+            temperature=temp_proto,
+            memory_info=memory_proto,
+            usage=usage.get("usage", None),
+            memory_usage=usage.get("memory_usage", None),
+            process=proc_proto_list,
+        )
 
 
 class NVGPUProtoBuilder(ProtoBuilder):
     proto = NVGPU
 
     @classmethod
-    def build_proto(cls, cuda_version=None, cuda_capacity=None,
-                    driver_version=None, **kwargs):
+    def build_proto(cls, cuda_version=None, cuda_capacity=None, driver_version=None, **kwargs):
         info_proto = BasicInfoProtoBuilder.build_proto(**kwargs)
         matrix_proto = MatrixInfoProtoBuilder.build_proto(**kwargs)
-        return cls._build_proto(info=info_proto,
-                                matrix=matrix_proto,
-                                cuda_version=cuda_version,
-                                cuda_capacity=cuda_capacity,
-                                driver_version=driver_version)
+        return cls._build_proto(
+            info=info_proto,
+            matrix=matrix_proto,
+            cuda_version=cuda_version,
+            cuda_capacity=cuda_capacity,
+            driver_version=driver_version,
+        )
 
 
 class CPUProtoBuilder(ProtoBuilder):

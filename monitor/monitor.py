@@ -1,16 +1,17 @@
-from .reader.device_reader import DeviceReader
+import queue
 import threading
 import time
-import queue
+
+from .reader.device_reader import DeviceReader
 
 
 class BasicMonitor:
     def __init__(self, reader, proto_que=queue.Queue(), interval=0.5):
         if not isinstance(reader, DeviceReader):
-            raise TypeError(f'reader should be a type of DeviceReader, get {type(reader)}.')
+            raise TypeError(f"reader should be a type of DeviceReader, get {type(reader)}.")
 
-        if not hasattr(proto_que, 'put') or not callable(proto_que.put):
-            raise TypeError('proto_que should has callable put attribute.')
+        if not hasattr(proto_que, "put") or not callable(proto_que.put):
+            raise TypeError("proto_que should has callable put attribute.")
         self.reader = reader
         self.stop_event = threading.Event()
         self.proto_que = proto_que
