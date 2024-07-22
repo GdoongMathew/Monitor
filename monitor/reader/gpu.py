@@ -147,7 +147,11 @@ class NVGPUReader(DeviceReader):
 
         self.gpu_handle = call_nvml_init(_handle_func)(_func_input)
 
-    def to_proto(self, basic_info=True, matrix_info=True) -> NVGPUProtoBuilder:
+    def to_proto(
+        self,
+        basic_info: bool = True,
+        matrix_info: bool = True,
+    ) -> NVGPUProtoBuilder:
         ret = self.summary(basic_info=basic_info, matrix_info=matrix_info)
         return NVGPUProtoBuilder.build_proto(**ret)
 
@@ -163,7 +167,7 @@ class NVGPUReader(DeviceReader):
 
     @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND])
-    def uuid(self):
+    def uuid(self) -> str:
         return pynvml.nvmlDeviceGetUUID(self.gpu_handle)
 
     @call_nvml_init
@@ -173,12 +177,12 @@ class NVGPUReader(DeviceReader):
 
     @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND, pynvml.NVML_ERROR_NOT_SUPPORTED])
-    def architecture(self):
+    def architecture(self) -> str:
         return self._NVML_ARCH[pynvml.nvmlDeviceGetArchitecture(self.gpu_handle)]
 
     @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND, pynvml.NVML_ERROR_NOT_SUPPORTED])
-    def brand(self):
+    def brand(self) -> str:
         return self._NVML_BRAND[pynvml.nvmlDeviceGetBrand(self.gpu_handle)]
 
     @call_nvml_init
@@ -188,23 +192,23 @@ class NVGPUReader(DeviceReader):
 
     @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND])
-    def cuda_version(self):
+    def cuda_version(self) -> int:
         return pynvml.nvmlSystemGetCudaDriverVersion_v2()
 
     @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND])
-    def cuda_capacity(self):
+    def cuda_capacity(self) -> str:
         return str(pynvml.nvmlDeviceGetCudaComputeCapability(self.gpu_handle))
 
     @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND])
-    def usage(self):
+    def usage(self) -> dict[str, int]:
         usage = pynvml.nvmlDeviceGetUtilizationRates(self.gpu_handle)
         return {"usage": usage.gpu, "memory_usage": usage.memory}
 
     @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND])
-    def power_usage(self):
+    def power_usage(self) -> int:
         return pynvml.nvmlDeviceGetPowerUsage(self.gpu_handle)
 
     @call_nvml_init
@@ -220,14 +224,14 @@ class NVGPUReader(DeviceReader):
 
     @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND, pynvml.NVML_ERROR_NOT_SUPPORTED])
-    def memory_info(self) -> dict[str, float]:
+    def memory_info(self) -> dict[str, int]:
         val = pynvml.nvmlDeviceGetMemoryInfo(self.gpu_handle)
         ret = {"total": val.total, "free": val.free, "used": val.used}
         return ret
 
     @call_nvml_init
     @omit_nvml_error([pynvml.NVML_ERROR_FUNCTION_NOT_FOUND])
-    def process_info(self):
+    def process_info(self) -> list[dict[str, int]]:
         _procs = pynvml.nvmlDeviceGetComputeRunningProcesses(self.gpu_handle)
         _procs.extend(pynvml.nvmlDeviceGetGraphicsRunningProcesses(self.gpu_handle))
         ret = []

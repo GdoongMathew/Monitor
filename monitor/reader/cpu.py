@@ -51,7 +51,7 @@ class CPUReader(DeviceReader):
     def brand(self) -> str:
         return platform.processor()
 
-    def uuid(self):
+    def uuid(self) -> str:
         try:
             if psutil.LINUX:
                 return os.popen("hdparm -I /dev/sda | grep 'Serial Number'").read().split()[-1]
@@ -63,7 +63,7 @@ class CPUReader(DeviceReader):
     def architecture(self) -> str:
         return platform.machine()
 
-    def temperature(self, fahrenheit=False) -> dict[str, float]:
+    def temperature(self, fahrenheit: bool = False) -> dict[str, float]:
         if hasattr(psutil, "sensors_temperatures"):
             temp_readings = psutil.sensors_temperatures(fahrenheit=fahrenheit)["coretemp"]
             temp = list(map(lambda x: x.current, filter(lambda x: "Core" in x.label, temp_readings)))
@@ -81,14 +81,14 @@ class CPUReader(DeviceReader):
                 ret = {"Fahrenheit": None} if fahrenheit else {"Celsius": None}
         return ret
 
-    def usage(self):
+    def usage(self) -> dict[str, float]:
         mem_info = self.memory_info()
         return {
             "usage": psutil.cpu_percent(0.05),
             "memory_usage": mem_info["used"] / mem_info["total"] * 100,
         }
 
-    def memory_info(self):
+    def memory_info(self) -> dict[str, int]:
         v_mem = psutil.virtual_memory()
         return {
             "total": v_mem.total,
@@ -96,7 +96,7 @@ class CPUReader(DeviceReader):
             "used": v_mem.total - v_mem.available,
         }
 
-    def process_info(self):
+    def process_info(self) -> list[dict[str, int]]:
         ret = []
         for _p in psutil.process_iter(attrs=["pid", "name", "cpu_percent", "memory_info"]):
             ret.append(
@@ -109,6 +109,10 @@ class CPUReader(DeviceReader):
             )
         return ret
 
-    def to_proto(self, **kwargs) -> CPUProtoBuilder:
-        ret = self.summary(**kwargs)
+    def to_proto(
+        self,
+        basic_info: bool = True,
+        matrix_info: bool = True,
+    ) -> CPUProtoBuilder:
+        ret = self.summary(basic_info=basic_info, matrix_info=matrix_info)
         return CPUProtoBuilder.build_proto(**ret)

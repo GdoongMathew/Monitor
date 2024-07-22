@@ -8,7 +8,11 @@ class DeviceReader:
     _basic_info_list = []
     _matrix_info_list = []
 
-    def summary(self, basic_info=True, matrix_info=True) -> dict[str, Any]:
+    def summary(
+        self,
+        basic_info: bool = True,
+        matrix_info: bool = True,
+    ) -> dict[str, Any]:
         # gathering information
         _info_list = []
         if not basic_info and not matrix_info:
@@ -24,7 +28,7 @@ class DeviceReader:
         return "Unknown Device"
 
     @abstractmethod
-    def temperature(self):
+    def temperature(self) -> dict[str, float]:
         raise NotImplementedError
 
     @abstractmethod
