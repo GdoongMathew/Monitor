@@ -122,26 +122,26 @@ class NVGPUReader(DeviceReader):
 
         if idx is not None:
             if not isinstance(idx, int):
-                raise TypeError(f"idx should be integer, get {type(idx)}.")
+                raise TypeError(f"idx should be an integer, get {type(idx)}.")
             _handle_func = _create_handle_func["idx"]
             _func_input = idx
 
         elif uuid is not None:
             if not isinstance(uuid, str):
-                raise TypeError(f"uuid should be integer, get {type(uuid)}.")
+                raise TypeError(f"uuid should be a str, get {type(uuid)}.")
             _handle_func = _create_handle_func["uuid"]
             _func_input = bytes(uuid, encoding="utf-8")
 
         elif pci_bus_id is not None:
             if not isinstance(pci_bus_id, str):
-                raise TypeError(f"pci_bus_id should be integer, get {type(pci_bus_id)}.")
+                raise TypeError(f"pci_bus_id should be a str, get {type(pci_bus_id)}.")
             _handle_func = _create_handle_func["pci_bus_id"]
             _func_input = bytes(pci_bus_id, encoding="utf-8")
 
         else:
             # serial
             if not isinstance(serial, str):
-                raise TypeError(f"serial should be integer, get {type(serial)}.")
+                raise TypeError(f"serial should be a str, get {type(serial)}.")
             _handle_func = _create_handle_func["serial"]
             _func_input = bytes(serial, encoding="utf-8")
 
