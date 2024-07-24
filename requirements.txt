@@ -1,4 +1,5 @@
 nvidia-ml-py
 psutil
+protobuf
 pywin32; platform_system == "Windows"
 wmi; platform_system == "Windows"
