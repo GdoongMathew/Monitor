@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, Literal, Optional
+from typing import Callable, Optional
 
 import psutil
 import pynvml
@@ -24,25 +24,6 @@ def omit_nvml_error(nvml_error_codes):
         return inner
 
     return wrapper
-
-
-def bytes_converter(
-    _b,
-    unit: Literal["b", "kb", "mb", "gb", "tb"] = "mb",
-) -> float:
-    _unit_map = {
-        "b": pow(1024, 0),
-        "kb": pow(1024, 1),
-        "mb": pow(1024, 2),
-        "gb": pow(1024, 3),
-        "tb": pow(1024, 4),
-    }
-    assert unit in _unit_map, f"{unit} is not supported."
-    return _b / _unit_map[unit]
-
-
-def nvml_struct_to_dict(_structure) -> dict:
-    return {i: getattr(_structure, i) for i, _ in _structure._fields_}
 
 
 def nvml_init(func: Callable) -> Callable:
