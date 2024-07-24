@@ -45,6 +45,7 @@ class CPUReader(DeviceReader):
                     .decode("utf-8")
                     .strip()
                 )
+            return "Unknown CPU"
         except Exception:
             return "Unknown CPU"
 
