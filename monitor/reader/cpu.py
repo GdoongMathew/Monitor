@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import platform
 import subprocess
+from functools import lru_cache
 
 import psutil
 
@@ -32,6 +33,7 @@ class CPUReader(DeviceReader):
     def __init__(self):
         pass
 
+    @lru_cache
     def name(self) -> str:
         try:
             if psutil.WINDOWS:
@@ -49,9 +51,11 @@ class CPUReader(DeviceReader):
         except Exception:
             return "Unknown CPU"
 
+    @lru_cache
     def brand(self) -> str:
         return platform.processor()
 
+    @lru_cache
     def uuid(self) -> str:
         try:
             if psutil.LINUX:
@@ -61,6 +65,7 @@ class CPUReader(DeviceReader):
         except Exception:
             return None
 
+    @lru_cache
     def architecture(self) -> str:
         return platform.machine()
 
