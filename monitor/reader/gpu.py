@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import Callable, Optional
 
 import psutil
@@ -136,6 +137,7 @@ class NVGPUReader(DeviceReader):
         ret = self.summary(basic_info=basic_info, matrix_info=matrix_info)
         return NVGPUProtoBuilder.build_proto(**ret)
 
+    @lru_cache
     @nvml_init
     @omit_nvml_error(
         [
@@ -146,6 +148,7 @@ class NVGPUReader(DeviceReader):
     def name(self) -> str:
         return pynvml.nvmlDeviceGetName(self.gpu_handle)
 
+    @lru_cache
     @nvml_init
     @omit_nvml_error(
         [
@@ -156,6 +159,7 @@ class NVGPUReader(DeviceReader):
     def index(self) -> int:
         return pynvml.nvmlDeviceGetIndex(self.gpu_handle)
 
+    @lru_cache
     @nvml_init
     @omit_nvml_error(
         [
@@ -166,6 +170,7 @@ class NVGPUReader(DeviceReader):
     def uuid(self) -> str:
         return pynvml.nvmlDeviceGetUUID(self.gpu_handle)
 
+    @lru_cache
     @nvml_init
     @omit_nvml_error(
         [
@@ -177,6 +182,7 @@ class NVGPUReader(DeviceReader):
     def serial(self):
         return pynvml.nvmlDeviceGetSerial(self.gpu_handle)
 
+    @lru_cache
     @nvml_init
     @omit_nvml_error(
         [
@@ -188,6 +194,7 @@ class NVGPUReader(DeviceReader):
     def architecture(self) -> str:
         return self._NVML_ARCH[pynvml.nvmlDeviceGetArchitecture(self.gpu_handle)]
 
+    @lru_cache
     @nvml_init
     @omit_nvml_error(
         [
@@ -214,6 +221,7 @@ class NVGPUReader(DeviceReader):
     def cuda_version(self) -> int:
         return pynvml.nvmlSystemGetCudaDriverVersion_v2()
 
+    @lru_cache
     @nvml_init
     @omit_nvml_error(
         [
